@@ -4,6 +4,9 @@ FROM node:18
 # Set working directory
 WORKDIR /app
 
+# Set port
+ENV PORT=8080
+
 # Copy package.json dan package-lock.json
 COPY package*.json ./
 
@@ -14,7 +17,7 @@ RUN npm install
 COPY . .
 
 # Expose port aplikasi
-EXPOSE 3000
+EXPOSE 8080
 
 # Start aplikasi
 CMD ["npm", "start"]
