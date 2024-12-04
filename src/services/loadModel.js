@@ -5,7 +5,7 @@ const MODEL_URL = 'https://storage.googleapis.com/cancer-detection-bucket1/model
 const loadModel = async () => {
   try {
     console.log('Loading model from URL:', MODEL_URL);
-    const model = await tf.loadLayersModel(MODEL_URL);
+    const model = await tf.loadGraphModel(MODEL_URL);
     console.log('Model loaded successfully');
     return model;
   } catch (error) {
