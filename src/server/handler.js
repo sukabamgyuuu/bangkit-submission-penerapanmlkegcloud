@@ -5,57 +5,25 @@ const { v4: uuidv4 } = require('uuid');
 const InputError = require('../exceptions/InputError');
 
 const postPredictHandler = async (request, h) => {
-  const form = new multiparty.Form();
-
-  return new Promise((resolve, reject) => {
-    form.parse(request.payload, async (err, fields, files) => {
-      if (err) {
-        console.error('Error parsing form data:', err);
-        reject(h.response({
-          status: 'fail',
-          message: 'Invalid file format',
-        }).code(415));
-      }
-
-      const file = files.image?.[0];
-      if (!file) {
-        console.error('No file uploaded');
-        reject(h.response({
-          status: 'fail',
-          message: 'File is required',
-        }).code(400));
-      }
-
-      if (file.size > 1000000) {
-        resolve(h.response({
-          status: 'fail',
-          message: 'Payload content length greater than maximum allowed: 1000000',
-        }).code(413));
-      }
-
-      try {
-        console.log('Classifying image...');
-        const result = await classifyImage(file);
-        const suggestion = result === 'Cancer' ? 'Segera periksa ke dokter!' : 'Anda sehat!';
-        const id = uuidv4();
-
-        console.log('Storing prediction...');
-        const savedData = await storePrediction(id, result, suggestion);
-
-        resolve(h.response({
-          status: 'success',
-          message: 'Model is predicted successfully',
-          data: savedData,
-        }).code(201));
-      } catch (error) {
-        console.error('Error during prediction process:', error);
-        resolve(h.response({
-          status: 'fail',
-          message: 'Terjadi kesalahan dalam melakukan prediksi',
-        }).code(500));
-      }
-    });
+  const { image } = request.payload;
+  const { model } = request.server.app;
+  const result = await classifyImage(model, image);
+  const suggestion = result === 'Cancer' ? 'Segera periksa ke dokter!' : 'Penyakit kanker tidak terdeteksi.';
+  const id = uuidv4();
+  const data = {
+    id: id,
+    result: result,
+    suggestion: suggestion,
+  };
+  
+  await storePrediction(data);
+  const response = h.response({
+    status: "success",
+    message: "Model is predicted successfully",
+    data,
   });
+  response.code(201);
+  return response;
 };
 
 const getHistoryHandler = async (request, h) => {
@@ -86,6 +54,5 @@ const getHistoryHandler = async (request, h) => {
     }).code(500);
   }
 };
-
 
 module.exports = { postPredictHandler, getHistoryHandler };
